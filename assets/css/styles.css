@@ -1,0 +1,120 @@
+/* Global Styles */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f9f9f9;
+  }
+  
+  .container, .course-container {
+    padding: 20px;
+  }
+  
+  .home-bar {
+    background-color: #282c34;
+    padding: 20px;
+    color: white;
+    margin-bottom: 20px;
+  }
+  
+  .card-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 20px;
+  }
+  
+  .card {
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    padding: 20px;
+    width: 300px;
+    cursor: pointer;
+    transition: transform 0.2s;
+    background-color: white;
+  }
+  
+  .card:hover {
+    transform: scale(1.05);
+  }
+  
+  .card h2 {
+    margin: 0;
+    font-size: 1.5em;
+  }
+  
+  .card h3 {
+    margin: 10px 0;
+    font-size: 1.2em;
+    color: #555;
+  }
+  
+  .card p {
+    margin: 0;
+    font-size: 0.9em;
+    color: #777;
+  }
+  
+  .top-section {
+    margin-bottom: 20px;
+  }
+  
+  .back-button {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    cursor: pointer;
+    border-radius: 5px;
+    margin-bottom: 10px;
+  }
+  
+  .back-button:hover {
+    background-color: #0056b3;
+  }
+  
+  .main-content {
+    display: flex;
+    gap: 20px;
+  }
+  
+  .side-panel {
+    width: 200px;
+    background-color: #f4f4f4;
+    padding: 10px;
+    border-radius: 5px;
+  }
+  
+  .side-panel h3 {
+    margin-top: 0;
+    color: black;
+  }
+  
+  .side-panel ul {
+    list-style-type: none;
+    padding: 0;
+  }
+  
+  .side-panel li {
+    padding: 10px;
+    cursor: pointer;
+    border-bottom: 1px solid #ddd;
+    color: black;
+    background-color: white;
+  }
+  
+  .side-panel li:hover {
+    background-color: #ddd;
+  }
+  
+  .pdf-viewer {
+    flex-grow: 1;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    padding: 10px;
+    background-color: #f9f9f9;
+  }
+  
+  .pdf-viewer iframe {
+    border: none;
+  }

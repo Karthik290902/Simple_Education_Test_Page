@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>COMP-3201-001: Nature-Inspired Computing</title>
+  <link rel="stylesheet" href="assets/css/styles.css">
+</head>
+<body>
+  <div class="course-container">
+    <!-- Top Section: Course Info and Back Button -->
+    <div class="top-section">
+      <button class="back-button" onclick="window.location.href='index.html'">
+        &larr; Back
+      </button>
+      <h1>COMP-3201-001: Nature-Inspired Computing</h1>
+      <p>
+        This course covers nature-inspired algorithms such as genetic algorithms, ant colony optimization, and more.
+      </p>
+    </div>
+
+    <!-- Main Content: Side Panel and PDF Viewer -->
+    <div class="main-content">
+      <!-- Side Panel -->
+      <div class="side-panel">
+        <h3>Course Materials</h3>
+        <ul>
+          <li onclick="loadPdf('assets/pdfs/course1/doc1.pdf')">Lesson 1</li>
+          <li onclick="loadPdf('assets/pdfs/course1/doc2.pdf')">Lesson 2</li>
+          <li onclick="loadPdf('assets/pdfs/course1/doc3.pdf')">Lesson 3</li>
+        </ul>
+      </div>
+
+      <!-- PDF Viewer -->
+      <div class="pdf-viewer">
+        <iframe
+          id="pdf-viewer-iframe"
+          src="assets/pdfs/course1/doc1.pdf"
+          width="100%"
+          height="600px"
+          title="PDF Viewer"
+        ></iframe>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Function to load PDF in the iframe
+    function loadPdf(pdfPath) {
+      document.getElementById('pdf-viewer-iframe').src = pdfPath;
+    }
+  </script>
+</body>
+</html>
