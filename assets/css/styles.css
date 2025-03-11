@@ -133,16 +133,16 @@ body {
       margin-bottom: 20px; /* Add space between side panel and PDF viewer */
     }
   
+    .pdf-viewer {
+      height: 80vh; /* Take 80% of the viewport height */
+    }
+  
     .pdf-viewer iframe {
-      height: 400px; /* Adjusted height for smaller screens */
+      height: 100%; /* Fill the entire height of the .pdf-viewer container */
     }
   }
   
   @media (max-width: 480px) {
-    .pdf-viewer iframe {
-      height: 300px; /* Further adjusted height for very small screens */
-    }
-  
     .top-section h1 {
       font-size: 1.5em; /* Reduce font size for smaller screens */
     }
