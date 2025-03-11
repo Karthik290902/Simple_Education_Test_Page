@@ -135,6 +135,7 @@ body {
   
     .pdf-viewer {
       height: 80vh; /* Take 80% of the viewport height */
+      overflow-y: scroll ;
     }
   
     .pdf-viewer iframe {
