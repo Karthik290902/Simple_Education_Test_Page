@@ -135,11 +135,11 @@ body {
   
     .pdf-viewer {
       height: 80vh; /* Take 80% of the viewport height */
-      overflow-y: scroll ;
     }
   
     .pdf-viewer iframe {
       height: 100%; /* Fill the entire height of the .pdf-viewer container */
+      overflow-y: scroll;
     }
   }
   
