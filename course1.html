@@ -5,6 +5,27 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>COMP-3201-001: Nature-Inspired Computing</title>
   <link rel="stylesheet" href="assets/css/styles.css">
+  <!-- Add PDF.js library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+  <style>
+    .pdf-controls {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 10px;
+      gap: 10px;
+    }
+    .pdf-controls button {
+      padding: 5px 10px;
+      cursor: pointer;
+    }
+    #pdf-page-num {
+      margin: 0 5px;
+    }
+    #pdf-canvas {
+      max-width: 100%;
+      border: 1px solid #ddd;
+    }
+  </style>
 </head>
 <body>
   <div class="course-container">
@@ -31,24 +52,108 @@
         </ul>
       </div>
 
-      <!-- PDF Viewer -->
+      <!-- PDF Viewer with PDF.js -->
       <div class="pdf-viewer">
-        <iframe
-          id="pdf-viewer-iframe"
-          src="assets/pdfs/course1/doc1.pdf"
-          width="100%"
-          height="600px"
-          title="PDF Viewer"
-        ></iframe>
+        <div class="pdf-controls">
+          <button id="prev-page">Previous</button>
+          <span>Page <span id="pdf-page-num">1</span> of <span id="pdf-page-count">1</span></span>
+          <button id="next-page">Next</button>
+        </div>
+        <canvas id="pdf-canvas"></canvas>
       </div>
     </div>
   </div>
 
   <script>
-    // Function to load PDF in the iframe
-    function loadPdf(pdfPath) {
-      document.getElementById('pdf-viewer-iframe').src = pdfPath;
+    // Set up PDF.js worker
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+    
+    let pdfDoc = null;
+    let pageNum = 1;
+    let pageRendering = false;
+    let pageNumPending = null;
+    let scale = 1.5;
+    const canvas = document.getElementById('pdf-canvas');
+    const ctx = canvas.getContext('2d');
+    
+    // Render the page
+    function renderPage(num) {
+      pageRendering = true;
+      
+      // Using promise to fetch the page
+      pdfDoc.getPage(num).then(function(page) {
+        const viewport = page.getViewport({scale: scale});
+        canvas.height = viewport.height;
+        canvas.width = viewport.width;
+        
+        // Render PDF page into canvas context
+        const renderContext = {
+          canvasContext: ctx,
+          viewport: viewport
+        };
+        
+        const renderTask = page.render(renderContext);
+        
+        // Wait for rendering to finish
+        renderTask.promise.then(function() {
+          pageRendering = false;
+          if (pageNumPending !== null) {
+            // New page rendering is pending
+            renderPage(pageNumPending);
+            pageNumPending = null;
+          }
+        });
+      });
+      
+      // Update page counters
+      document.getElementById('pdf-page-num').textContent = num;
     }
+    
+    // Go to previous page
+    function onPrevPage() {
+      if (pageNum <= 1) {
+        return;
+      }
+      pageNum--;
+      queueRenderPage(pageNum);
+    }
+    
+    // Go to next page
+    function onNextPage() {
+      if (pageNum >= pdfDoc.numPages) {
+        return;
+      }
+      pageNum++;
+      queueRenderPage(pageNum);
+    }
+    
+    // Queue rendering if another page is currently rendering
+    function queueRenderPage(num) {
+      if (pageRendering) {
+        pageNumPending = num;
+      } else {
+        renderPage(num);
+      }
+    }
+    
+    // Function to load PDF
+    function loadPdf(pdfPath) {
+      pdfjsLib.getDocument(pdfPath).promise.then(function(newPdfDoc) {
+        pdfDoc = newPdfDoc;
+        document.getElementById('pdf-page-count').textContent = pdfDoc.numPages;
+        
+        // Initial render
+        pageNum = 1;
+        renderPage(pageNum);
+      });
+    }
+    
+    // Button event listeners
+    document.getElementById('prev-page').addEventListener('click', onPrevPage);
+    document.getElementById('next-page').addEventListener('click', onNextPage);
+    
+    // Load initial PDF
+    loadPdf('assets/pdfs/course1/doc1.pdf');
   </script>
 </body>
 </html>
