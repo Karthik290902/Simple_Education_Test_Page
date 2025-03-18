@@ -58,6 +58,7 @@
           <button id="prev-page">Previous</button>
           <span>Page <span id="pdf-page-num">1</span> of <span id="pdf-page-count">1</span></span>
           <button id="next-page">Next</button>
+          <button id="save-offline">Save Offline</button>
         </div>
         <canvas id="pdf-canvas"></canvas>
       </div>
@@ -73,6 +74,7 @@
     let pageRendering = false;
     let pageNumPending = null;
     let scale = 1.5;
+    let currentPdfPath = 'assets/pdfs/course1/doc1.pdf'; // Track current PDF path
     const canvas = document.getElementById('pdf-canvas');
     const ctx = canvas.getContext('2d');
     
@@ -137,8 +139,28 @@
     }
     
     // Function to load PDF
-    function loadPdf(pdfPath) {
-      pdfjsLib.getDocument(pdfPath).promise.then(function(newPdfDoc) {
+    async function loadPdf(pdfPath) {
+      currentPdfPath = pdfPath; // Update current PDF path
+      let pdf_url = pdfPath;
+      
+      try {
+        // Try to get the PDF from offline app sync
+        let response = await median.offlineAppSync.getSavedResource({
+          url: "https://" + window.location.host + "/" + pdfPath
+        });
+        
+        // If successful, use the returned URL
+        if (response && response.url) {
+          pdf_url = response.url;
+          console.log('Using cached PDF from offline storage');
+        }
+      } catch (error) {
+        // If median doesn't exist or any other error occurs, fallback to original URL
+        console.log('Falling back to original PDF URL', error);
+      }
+      
+      // Load the PDF using PDF.js
+      pdfjsLib.getDocument(pdf_url).promise.then(function(newPdfDoc) {
         pdfDoc = newPdfDoc;
         document.getElementById('pdf-page-count').textContent = pdfDoc.numPages;
         
@@ -148,9 +170,58 @@
       });
     }
     
+    // Function to save PDF for offline use
+    async function savePdfOffline() {
+      try {
+        const pageTitle = document.title; // Get the current page title
+        
+        // Show saving indicator
+        const saveButton = document.getElementById('save-offline');
+        const originalText = saveButton.textContent;
+        saveButton.textContent = 'Saving...';
+        saveButton.disabled = true;
+        
+        // Cache the course page
+        let responsePage = await median.offlineAppSync.cachePage({
+          url: 'https://simple-education-test-page-delta.vercel.app/course1.html',
+          priority: 1,
+          name: pageTitle,
+          saveForUser: true,
+        });
+        
+        // Cache the current PDF
+        let responsePdf = await median.offlineAppSync.cacheResource({
+          url: "https://" + window.location.host + "/" + currentPdfPath,
+          priority: 1,
+          saveForUser: true,
+        });
+        
+        // Update button to show success
+        saveButton.textContent = 'Saved!';
+        
+        // Restore button after 2 seconds
+        setTimeout(() => {
+          saveButton.textContent = originalText;
+          saveButton.disabled = false;
+        }, 2000);
+        
+        console.log('Page and PDF saved for offline use', responsePage, responsePdf);
+      } catch (error) {
+        console.error('Failed to save for offline use', error);
+        document.getElementById('save-offline').textContent = 'Save Failed';
+        
+        // Restore button after 2 seconds
+        setTimeout(() => {
+          document.getElementById('save-offline').textContent = 'Save Offline';
+          document.getElementById('save-offline').disabled = false;
+        }, 2000);
+      }
+    }
+    
     // Button event listeners
     document.getElementById('prev-page').addEventListener('click', onPrevPage);
     document.getElementById('next-page').addEventListener('click', onNextPage);
+    document.getElementById('save-offline').addEventListener('click', savePdfOffline);
     
     // Load initial PDF
     loadPdf('assets/pdfs/course1/doc1.pdf');
