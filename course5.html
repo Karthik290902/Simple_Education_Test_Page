@@ -95,6 +95,8 @@
         if (response && response.url) {
           pdf_url = response.url;
           console.log('Using cached PDF from offline storage');
+        } else {
+          throw new Error('No cached PDF found');
         }
       } catch (error) {
         // If median doesn't exist or any other error occurs, fallback to original URL
