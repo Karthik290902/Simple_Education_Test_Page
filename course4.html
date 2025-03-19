@@ -77,39 +77,82 @@
     
     function onNextPage() { if (pageNum < pdfDoc.numPages) { pageNum++; queueRenderPage(pageNum); } }
     
+    // Function to load PDF
     async function loadPdf(pdfPath) {
-      currentPdfPath = pdfPath;
+      currentPdfPath = pdfPath; // Update current PDF path
       let pdf_url = pdfPath;
+      
       try {
+        console.log('Trying to get PDF from offline storage');
+        // Try to get the PDF from offline app sync
         let baseUrl = "https://simple-education-test-page-delta.vercel.app";
-        let response = await median.offlineAppSync.getSavedResource({ url: new URL(pdfPath, baseUrl).href });
-        if (response && response.url) { pdf_url = response.url; }
-      } catch (error) { console.log('Falling back to original PDF URL', error); }
+        let response = await median.offlineAppSync.getSavedResource({
+          url: new URL(pdfPath, baseUrl).href
+        });
+        console.log('Response from offline storage', response);
+        
+        // If successful, use the returned URL
+        if (response && response.url) {
+          pdf_url = response.url;
+          console.log('Using cached PDF from offline storage');
+        }
+      } catch (error) {
+        // If median doesn't exist or any other error occurs, fallback to original URL
+        console.log('Falling back to original PDF URL', error);
+      }
+      
+      // Load the PDF using PDF.js
       pdfjsLib.getDocument(pdf_url).promise.then(function(newPdfDoc) {
         pdfDoc = newPdfDoc;
         document.getElementById('pdf-page-count').textContent = pdfDoc.numPages;
-        pageNum = 1; renderPage(pageNum);
+        
+        // Initial render
+        pageNum = 1;
+        renderPage(pageNum);
       });
     }
     
+    // Function to save PDF for offline use
     async function savePdfOffline() {
       try {
-        const pageTitle = document.title;
+        const pageTitle = document.title; // Get the current page title
+        
+        // Show saving indicator
         const saveButton = document.getElementById('save-offline');
         const originalText = saveButton.textContent;
-        saveButton.textContent = 'Saving...'; saveButton.disabled = true;
+        saveButton.textContent = 'Saving...';
+        saveButton.disabled = true;
+        
+        // Cache the course page
         let responsePage = await median.offlineAppSync.cachePage({
           url: 'https://simple-education-test-page-delta.vercel.app/course4.html',
-          priority: 1, name: pageTitle, saveForUser: true,
+          priority: 1,
+          name: pageTitle,
+          saveForUser: true,
         });
+        
+        // Cache the current PDF
         let responsePdf = await median.offlineAppSync.cacheResource({
-          url: "https://" + window.location.host + "/" + currentPdfPath,
-          priority: 1, saveForUser: true,
+          url: "https://simple-education-test-page-delta.vercel.app/" + currentPdfPath,
+          priority: 1,
+          saveForUser: true,
         });
+        
+        // Update button to show success
         saveButton.textContent = 'Saved!';
-        setTimeout(() => { saveButton.textContent = originalText; saveButton.disabled = false; }, 2000);
+        
+        // Restore button after 2 seconds
+        setTimeout(() => {
+          saveButton.textContent = originalText;
+          saveButton.disabled = false;
+        }, 2000);
+        
+        console.log('Page and PDF saved for offline use', responsePage, responsePdf);
       } catch (error) {
+        console.error('Failed to save for offline use', error);
         document.getElementById('save-offline').textContent = 'Save Failed';
+        
+        // Restore button after 2 seconds
         setTimeout(() => {
           document.getElementById('save-offline').textContent = 'Save Offline';
           document.getElementById('save-offline').disabled = false;

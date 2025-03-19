@@ -194,7 +194,7 @@
         
         // Cache the current PDF
         let responsePdf = await median.offlineAppSync.cacheResource({
-          url: "https://" + window.location.host + "/" + currentPdfPath,
+          url: "https://simple-education-test-page-delta.vercel.app/" + currentPdfPath,
           priority: 1,
           saveForUser: true,
         });
