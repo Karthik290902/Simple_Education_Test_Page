@@ -162,7 +162,7 @@
       } catch (error) {
         // If median doesn't exist or any other error occurs, fallback to original URL
         console.log('Falling back to original PDF URL', error);
-        pdf_url = pdfPath;
+        pdf_url = new URL(pdfPath, baseUrl).href // Fallback to original URL with base URL (IMP to include base URL to avoid file:// protocol)
       }
       
       // Load the PDF using PDF.js
