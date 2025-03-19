@@ -162,6 +162,7 @@
       } catch (error) {
         // If median doesn't exist or any other error occurs, fallback to original URL
         console.log('Falling back to original PDF URL', error);
+        pdf_url = pdfPath;
       }
       
       // Load the PDF using PDF.js
