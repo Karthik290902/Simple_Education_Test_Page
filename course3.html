@@ -5,6 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ECE 8000 / 8010-001 Electrical/Computer Engineering Design Project II</title>
   <link rel="stylesheet" href="assets/css/styles.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+  <style>
+    .pdf-controls { display: flex; justify-content: center; margin-bottom: 10px; gap: 10px; }
+    .pdf-controls button { padding: 5px 10px; cursor: pointer; }
+    #pdf-page-num { margin: 0 5px; }
+    #pdf-canvas { max-width: 100%; border: 1px solid #ddd; }
+  </style>
 </head>
 <body>
   <div class="course-container">
@@ -33,22 +40,88 @@
 
       <!-- PDF Viewer -->
       <div class="pdf-viewer">
-        <iframe
-          id="pdf-viewer-iframe"
-          src="assets/pdfs/course3/doc1.pdf"
-          width="100%"
-          height="600px"
-          title="PDF Viewer"
-        ></iframe>
+        <!-- Replace iframe with PDF.js viewer -->
+        <div class="pdf-controls">
+          <button id="prev-page">Previous</button>
+          <span>Page <span id="pdf-page-num">1</span> of <span id="pdf-page-count">1</span></span>
+          <button id="next-page">Next</button>
+          <button id="save-offline">Save Offline</button>
+        </div>
+        <canvas id="pdf-canvas"></canvas>
       </div>
     </div>
   </div>
 
   <script>
-    // Function to load PDF in the iframe
-    function loadPdf(pdfPath) {
-      document.getElementById('pdf-viewer-iframe').src = pdfPath;
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+    let pdfDoc = null, pageNum = 1, pageRendering = false, pageNumPending = null;
+    let scale = 1.5, currentPdfPath = 'assets/pdfs/course3/doc1.pdf';
+    const canvas = document.getElementById('pdf-canvas'), ctx = canvas.getContext('2d');
+    
+    function renderPage(num) {
+      pageRendering = true;
+      pdfDoc.getPage(num).then(function(page) {
+        const viewport = page.getViewport({scale});
+        canvas.height = viewport.height; canvas.width = viewport.width;
+        const renderContext = { canvasContext: ctx, viewport };
+        page.render(renderContext).promise.then(function() {
+          pageRendering = false;
+          if (pageNumPending !== null) { renderPage(pageNumPending); pageNumPending = null; }
+        });
+      });
+      document.getElementById('pdf-page-num').textContent = num;
     }
+    
+    function queueRenderPage(num) { pageRendering ? pageNumPending = num : renderPage(num); }
+    
+    function onPrevPage() { if (pageNum > 1) { pageNum--; queueRenderPage(pageNum); } }
+    
+    function onNextPage() { if (pageNum < pdfDoc.numPages) { pageNum++; queueRenderPage(pageNum); } }
+    
+    async function loadPdf(pdfPath) {
+      currentPdfPath = pdfPath;
+      let pdf_url = pdfPath;
+      try {
+        let baseUrl = "https://simple-education-test-page-delta.vercel.app";
+        let response = await median.offlineAppSync.getSavedResource({ url: new URL(pdfPath, baseUrl).href });
+        if (response && response.url) { pdf_url = response.url; }
+      } catch (error) { console.log('Falling back to original PDF URL', error); }
+      pdfjsLib.getDocument(pdf_url).promise.then(function(newPdfDoc) {
+        pdfDoc = newPdfDoc;
+        document.getElementById('pdf-page-count').textContent = pdfDoc.numPages;
+        pageNum = 1; renderPage(pageNum);
+      });
+    }
+    
+    async function savePdfOffline() {
+      try {
+        const pageTitle = document.title;
+        const saveButton = document.getElementById('save-offline');
+        const originalText = saveButton.textContent;
+        saveButton.textContent = 'Saving...'; saveButton.disabled = true;
+        let responsePage = await median.offlineAppSync.cachePage({
+          url: 'https://simple-education-test-page-delta.vercel.app/course3.html',
+          priority: 1, name: pageTitle, saveForUser: true,
+        });
+        let responsePdf = await median.offlineAppSync.cacheResource({
+          url: "https://" + window.location.host + "/" + currentPdfPath,
+          priority: 1, saveForUser: true,
+        });
+        saveButton.textContent = 'Saved!';
+        setTimeout(() => { saveButton.textContent = originalText; saveButton.disabled = false; }, 2000);
+      } catch (error) {
+        document.getElementById('save-offline').textContent = 'Save Failed';
+        setTimeout(() => {
+          document.getElementById('save-offline').textContent = 'Save Offline';
+          document.getElementById('save-offline').disabled = false;
+        }, 2000);
+      }
+    }
+    
+    document.getElementById('prev-page').addEventListener('click', onPrevPage);
+    document.getElementById('next-page').addEventListener('click', onNextPage);
+    document.getElementById('save-offline').addEventListener('click', savePdfOffline);
+    loadPdf('assets/pdfs/course3/doc1.pdf');
   </script>
 </body>
 </html>
