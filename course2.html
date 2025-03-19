@@ -88,11 +88,11 @@
     async function loadPdf(pdfPath) {
       currentPdfPath = pdfPath; // Update current PDF path
       let pdf_url = pdfPath;
+      const baseUrl = "https://simple-education-test-page-delta.vercel.app";
       
       try {
         console.log('Trying to get PDF from offline storage');
         // Try to get the PDF from offline app sync
-        let baseUrl = "https://simple-education-test-page-delta.vercel.app";
         let response = await median.offlineAppSync.getSavedResource({
           url: new URL(pdfPath, baseUrl).href
         });
@@ -108,6 +108,7 @@
       } catch (error) {
         // If median doesn't exist or any other error occurs, fallback to original URL
         console.log('Falling back to original PDF URL', error);
+        pdf_url = new URL(pdfPath, baseUrl).href // Fallback to original URL with base URL (IMP to include base URL to avoid file:// protocol)
       }
       
       // Load the PDF using PDF.js
