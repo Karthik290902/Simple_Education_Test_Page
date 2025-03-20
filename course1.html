@@ -66,18 +66,32 @@
   </div>
 
   <script>
+    const pdfJSWorkerUrl = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js";
     (async function() {
       // Set up PDF.js worker with local cache check
       let cachedWorker;
       try {
         cachedWorker = await median.offlineAppSync.getSavedResource({
-          url: "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js"
+          url: pdfJSWorkerUrl
         });
         console.log("Worker cached: ", JSON.stringify(cachedWorker));
       } catch (error) {
         console.log("Worker not cached", error);
       }
-      pdfjsLib.GlobalWorkerOptions.workerSrc = (cachedWorker && cachedWorker.url) ? cachedWorker.url : 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+      if (!cachedWorker || !cachedWorker.url) {
+        try {
+          console.log("Caching PDF worker...");
+          await median.offlineAppSync.cacheResource({
+            url: pdfJSWorkerUrl,
+            priority: 1,
+            saveForUser: true,
+          });
+          console.log("PDF worker cached successfully.");
+        } catch (cacheError) {
+          console.log("Failed to cache PDF worker", cacheError);
+        }
+      }
+      pdfjsLib.GlobalWorkerOptions.workerSrc = (cachedWorker && cachedWorker.url) ? cachedWorker.url : pdfJSWorkerUrl;
 
       let pdfDoc = null;
       let pageNum = 1;
