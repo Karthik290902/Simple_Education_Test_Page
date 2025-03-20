@@ -73,6 +73,7 @@
         cachedWorker = await median.offlineAppSync.getSavedResource({
           url: "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js"
         });
+        console.log("Worker cached: ", JSON.stringify(cachedWorker));
       } catch (error) {
         console.log("Worker not cached", error);
       }
