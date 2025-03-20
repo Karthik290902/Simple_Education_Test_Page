@@ -200,6 +200,9 @@
         });
       }
       
+      // Expose loadPdf globally for inline usage
+      window.loadPdf = loadPdf;
+      
       // Function to save PDF for offline use
       async function savePdfOffline() {
         try {
