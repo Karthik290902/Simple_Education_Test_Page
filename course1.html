@@ -66,171 +66,181 @@
   </div>
 
   <script>
-    // Set up PDF.js worker
-    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
-    
-    let pdfDoc = null;
-    let pageNum = 1;
-    let pageRendering = false;
-    let pageNumPending = null;
-    let scale = 1.5;
-    let currentPdfPath = 'assets/pdfs/course1/doc1.pdf'; // Track current PDF path
-    const canvas = document.getElementById('pdf-canvas');
-    const ctx = canvas.getContext('2d');
-    
-    // Render the page
-    function renderPage(num) {
-      pageRendering = true;
-      
-      // Using promise to fetch the page
-      pdfDoc.getPage(num).then(function(page) {
-        const viewport = page.getViewport({scale: scale});
-        canvas.height = viewport.height;
-        canvas.width = viewport.width;
-        
-        // Render PDF page into canvas context
-        const renderContext = {
-          canvasContext: ctx,
-          viewport: viewport
-        };
-        
-        const renderTask = page.render(renderContext);
-        
-        // Wait for rendering to finish
-        renderTask.promise.then(function() {
-          pageRendering = false;
-          if (pageNumPending !== null) {
-            // New page rendering is pending
-            renderPage(pageNumPending);
-            pageNumPending = null;
-          }
-        });
-      });
-      
-      // Update page counters
-      document.getElementById('pdf-page-num').textContent = num;
-    }
-    
-    // Go to previous page
-    function onPrevPage() {
-      if (pageNum <= 1) {
-        return;
-      }
-      pageNum--;
-      queueRenderPage(pageNum);
-    }
-    
-    // Go to next page
-    function onNextPage() {
-      if (pageNum >= pdfDoc.numPages) {
-        return;
-      }
-      pageNum++;
-      queueRenderPage(pageNum);
-    }
-    
-    // Queue rendering if another page is currently rendering
-    function queueRenderPage(num) {
-      if (pageRendering) {
-        pageNumPending = num;
-      } else {
-        renderPage(num);
-      }
-    }
-    
-    // Function to load PDF
-    async function loadPdf(pdfPath) {
-      currentPdfPath = pdfPath; // Update current PDF path
-      let pdf_url = pdfPath;
-      const baseUrl = "https://simple-education-test-page-delta.vercel.app";
-      
+    (async function() {
+      // Set up PDF.js worker with local cache check
+      let cachedWorker;
       try {
-        console.log('Trying to get PDF from offline storage');
-        // Try to get the PDF from offline app sync
-        let response = await median.offlineAppSync.getSavedResource({
-          url: new URL(pdfPath, baseUrl).href
+        cachedWorker = await median.offlineAppSync.getSavedResource({
+          url: "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js"
         });
-        console.log('Response from offline storage', response);
+      } catch (error) {
+        console.log("Worker not cached", error);
+      }
+      pdfjsLib.GlobalWorkerOptions.workerSrc = (cachedWorker && cachedWorker.url) ? cachedWorker.url : 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+
+      let pdfDoc = null;
+      let pageNum = 1;
+      let pageRendering = false;
+      let pageNumPending = null;
+      let scale = 1.5;
+      let currentPdfPath = 'assets/pdfs/course1/doc1.pdf'; // Track current PDF path
+      const canvas = document.getElementById('pdf-canvas');
+      const ctx = canvas.getContext('2d');
+      
+      // Render the page
+      function renderPage(num) {
+        pageRendering = true;
         
-        // If successful, use the returned URL
-        if (response && response.url) {
-          pdf_url = response.url;
-          console.log('Using cached PDF from offline storage');
-        } else {
-          throw new Error('No cached PDF found');
+        // Using promise to fetch the page
+        pdfDoc.getPage(num).then(function(page) {
+          const viewport = page.getViewport({scale: scale});
+          canvas.height = viewport.height;
+          canvas.width = viewport.width;
+          
+          // Render PDF page into canvas context
+          const renderContext = {
+            canvasContext: ctx,
+            viewport: viewport
+          };
+          
+          const renderTask = page.render(renderContext);
+          
+          // Wait for rendering to finish
+          renderTask.promise.then(function() {
+            pageRendering = false;
+            if (pageNumPending !== null) {
+              // New page rendering is pending
+              renderPage(pageNumPending);
+              pageNumPending = null;
+            }
+          });
+        });
+        
+        // Update page counters
+        document.getElementById('pdf-page-num').textContent = num;
+      }
+      
+      // Go to previous page
+      function onPrevPage() {
+        if (pageNum <= 1) {
+          return;
         }
-      } catch (error) {
-        // If median doesn't exist or any other error occurs, fallback to original URL
-        console.log('Falling back to original PDF URL', error);
-        pdf_url = new URL(pdfPath, baseUrl).href // Fallback to original URL with base URL (IMP to include base URL to avoid file:// protocol)
+        pageNum--;
+        queueRenderPage(pageNum);
       }
       
-      // Load the PDF using PDF.js
-      pdfjsLib.getDocument(pdf_url).promise.then(function(newPdfDoc) {
-        pdfDoc = newPdfDoc;
-        document.getElementById('pdf-page-count').textContent = pdfDoc.numPages;
-        
-        // Initial render
-        pageNum = 1;
-        renderPage(pageNum);
-      });
-    }
-    
-    // Function to save PDF for offline use
-    async function savePdfOffline() {
-      try {
-        const pageTitle = document.title; // Get the current page title
-        
-        // Show saving indicator
-        const saveButton = document.getElementById('save-offline');
-        const originalText = saveButton.textContent;
-        saveButton.textContent = 'Saving...';
-        saveButton.disabled = true;
-        
-        // Cache the course page
-        let responsePage = await median.offlineAppSync.cachePage({
-          url: 'https://simple-education-test-page-delta.vercel.app/course1.html',
-          priority: 1,
-          name: pageTitle,
-          saveForUser: true,
-        });
-        
-        // Cache the current PDF
-        let responsePdf = await median.offlineAppSync.cacheResource({
-          url: "https://simple-education-test-page-delta.vercel.app/" + currentPdfPath,
-          priority: 1,
-          saveForUser: true,
-        });
-        
-        // Update button to show success
-        saveButton.textContent = 'Saved!';
-        
-        // Restore button after 2 seconds
-        setTimeout(() => {
-          saveButton.textContent = originalText;
-          saveButton.disabled = false;
-        }, 2000);
-        
-        console.log('Page and PDF saved for offline use', responsePage, responsePdf);
-      } catch (error) {
-        console.error('Failed to save for offline use', error);
-        document.getElementById('save-offline').textContent = 'Save Failed';
-        
-        // Restore button after 2 seconds
-        setTimeout(() => {
-          document.getElementById('save-offline').textContent = 'Save Offline';
-          document.getElementById('save-offline').disabled = false;
-        }, 2000);
+      // Go to next page
+      function onNextPage() {
+        if (pageNum >= pdfDoc.numPages) {
+          return;
+        }
+        pageNum++;
+        queueRenderPage(pageNum);
       }
-    }
-    
-    // Button event listeners
-    document.getElementById('prev-page').addEventListener('click', onPrevPage);
-    document.getElementById('next-page').addEventListener('click', onNextPage);
-    document.getElementById('save-offline').addEventListener('click', savePdfOffline);
-    
-    // Load initial PDF
-    loadPdf('assets/pdfs/course1/doc1.pdf');
+      
+      // Queue rendering if another page is currently rendering
+      function queueRenderPage(num) {
+        if (pageRendering) {
+          pageNumPending = num;
+        } else {
+          renderPage(num);
+        }
+      }
+      
+      // Function to load PDF
+      async function loadPdf(pdfPath) {
+        currentPdfPath = pdfPath; // Update current PDF path
+        let pdf_url = pdfPath;
+        const baseUrl = "https://simple-education-test-page-delta.vercel.app";
+        
+        try {
+          console.log('Trying to get PDF from offline storage');
+          // Try to get the PDF from offline app sync
+          let response = await median.offlineAppSync.getSavedResource({
+            url: new URL(pdfPath, baseUrl).href
+          });
+          console.log('Response from offline storage', response);
+          
+          // If successful, use the returned URL
+          if (response && response.url) {
+            pdf_url = response.url;
+            console.log('Using cached PDF from offline storage');
+          } else {
+            throw new Error('No cached PDF found');
+          }
+        } catch (error) {
+          // If median doesn't exist or any other error occurs, fallback to original URL
+          console.log('Falling back to original PDF URL', error);
+          pdf_url = new URL(pdfPath, baseUrl).href // Fallback to original URL with base URL (IMP to include base URL to avoid file:// protocol)
+        }
+        
+        // Load the PDF using PDF.js
+        pdfjsLib.getDocument(pdf_url).promise.then(function(newPdfDoc) {
+          pdfDoc = newPdfDoc;
+          document.getElementById('pdf-page-count').textContent = pdfDoc.numPages;
+          
+          // Initial render
+          pageNum = 1;
+          renderPage(pageNum);
+        });
+      }
+      
+      // Function to save PDF for offline use
+      async function savePdfOffline() {
+        try {
+          const pageTitle = document.title; // Get the current page title
+          
+          // Show saving indicator
+          const saveButton = document.getElementById('save-offline');
+          const originalText = saveButton.textContent;
+          saveButton.textContent = 'Saving...';
+          saveButton.disabled = true;
+          
+          // Cache the course page
+          let responsePage = await median.offlineAppSync.cachePage({
+            url: 'https://simple-education-test-page-delta.vercel.app/course1.html',
+            priority: 1,
+            name: pageTitle,
+            saveForUser: true,
+          });
+          
+          // Cache the current PDF
+          let responsePdf = await median.offlineAppSync.cacheResource({
+            url: "https://simple-education-test-page-delta.vercel.app/" + currentPdfPath,
+            priority: 1,
+            saveForUser: true,
+          });
+          
+          // Update button to show success
+          saveButton.textContent = 'Saved!';
+          
+          // Restore button after 2 seconds
+          setTimeout(() => {
+            saveButton.textContent = originalText;
+            saveButton.disabled = false;
+          }, 2000);
+          
+          console.log('Page and PDF saved for offline use', responsePage, responsePdf);
+        } catch (error) {
+          console.error('Failed to save for offline use', error);
+          document.getElementById('save-offline').textContent = 'Save Failed';
+          
+          // Restore button after 2 seconds
+          setTimeout(() => {
+            document.getElementById('save-offline').textContent = 'Save Offline';
+            document.getElementById('save-offline').disabled = false;
+          }, 2000);
+        }
+      }
+      
+      // Button event listeners
+      document.getElementById('prev-page').addEventListener('click', onPrevPage);
+      document.getElementById('next-page').addEventListener('click', onNextPage);
+      document.getElementById('save-offline').addEventListener('click', savePdfOffline);
+      
+      // Load initial PDF
+      loadPdf('assets/pdfs/course1/doc1.pdf');
+    })();
   </script>
 </body>
 </html>
