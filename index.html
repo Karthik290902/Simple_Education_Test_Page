@@ -9,12 +9,26 @@
     .card-link {
       text-decoration: none;
     }
+    /* Settings modal styles */
+    #settings-modal {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: #fff;
+      padding: 20px;
+      border: 1px solid #ccc;
+      z-index: 1000;
+    }
   </style>
 </head>
 <body>
   <div class="container">
     <header class="home-bar">
       <h1>Welcome to the Education Portal</h1>
+      <!-- Added Settings Button -->
+      <button id="open-settings">Settings</button>
     </header>
     <div class="card-container">
       <!-- Card for Course 1 -->
@@ -59,5 +73,54 @@
       </a>
     </div>
   </div>
+
+  <!-- Added Settings Modal -->
+  <div id="settings-modal">
+    <h2>Settings</h2>
+    <label for="cache-limit-slider">
+      Cache Limit (MB): <span id="cache-limit-value">100</span>
+    </label>
+    <input type="range" id="cache-limit-slider" min="100" max="3500" value="100">
+    <br>
+    <button id="save-settings">Save Settings</button>
+    <button id="close-settings">Close</button>
+  </div>
+
+  <script>
+    (function() {
+      // Settings modal logic
+      const openSettingsBtn = document.getElementById('open-settings');
+      const closeSettingsBtn = document.getElementById('close-settings');
+      const saveSettingsBtn = document.getElementById('save-settings');
+      const settingsModal = document.getElementById('settings-modal');
+      const cacheSlider = document.getElementById('cache-limit-slider');
+      const cacheValueDisplay = document.getElementById('cache-limit-value');
+
+      openSettingsBtn.addEventListener('click', () => {
+        settingsModal.style.display = 'block';
+      });
+
+      closeSettingsBtn.addEventListener('click', () => {
+        settingsModal.style.display = 'none';
+      });
+
+      cacheSlider.addEventListener('input', (e) => {
+        cacheValueDisplay.textContent = e.target.value;
+      });
+
+      saveSettingsBtn.addEventListener('click', async () => {
+        const sliderValue = parseInt(cacheSlider.value, 10);
+        try {
+          let response = await median.offlineAppSync.setCacheStorageLimit({ limitMB: sliderValue });
+          console.log('Cache limit updated:', response);
+          alert('New Limit: ' + response.newLimitMB + ' MB');
+        } catch (error) {
+          console.error('Error setting cache limit:', error);
+          alert('Failed to set cache limit');
+        }
+        settingsModal.style.display = 'none';
+      });
+    })();
+  </script>
 </body>
 </html>
