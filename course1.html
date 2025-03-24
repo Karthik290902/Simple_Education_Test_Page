@@ -68,30 +68,53 @@
   <script>
     const pdfJSWorkerUrl = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js";
     (async function() {
-      // Set up PDF.js worker with local cache check
-      let cachedWorker;
-      try {
-        cachedWorker = await median.offlineAppSync.getSavedResource({
-          url: pdfJSWorkerUrl
-        });
-        console.log("Worker cached: ", JSON.stringify(cachedWorker));
-      } catch (error) {
-        console.log("Worker not cached", error);
-      }
-      if (!cachedWorker || !cachedWorker.url) {
+      // Set up PDF.js worker with safe local cache check
+      async function setupWorker() {
         try {
-          console.log("Caching PDF worker...");
-          await median.offlineAppSync.cacheResource({
-            url: pdfJSWorkerUrl,
-            priority: 1,
-            saveForUser: true,
-          });
-          console.log("PDF worker cached successfully.");
-        } catch (cacheError) {
-          console.log("Failed to cache PDF worker", cacheError);
+          // Always set default worker source first
+          pdfjsLib.GlobalWorkerOptions.workerSrc = pdfJSWorkerUrl;
+          
+          // Try to get cached worker
+          if (typeof median !== 'undefined' && median.offlineAppSync) {
+            try {
+              const cachedWorker = await median.offlineAppSync.getSavedResource({
+                url: pdfJSWorkerUrl
+              });
+              console.log("Worker info retrieved:", cachedWorker);
+              
+              // Only use the cached worker if it's not a file:// URL
+              if (cachedWorker && cachedWorker.url && !cachedWorker.url.startsWith('file://')) {
+                console.log("Using cached worker from:", cachedWorker.url);
+                pdfjsLib.GlobalWorkerOptions.workerSrc = cachedWorker.url;
+              } else {
+                console.log("Cached worker has invalid URL, using CDN version");
+              }
+            } catch (error) {
+              console.log("Could not retrieve cached worker:", error);
+            }
+            
+            // Try to cache the worker for future use
+            try {
+              console.log("Ensuring PDF worker is cached...");
+              await median.offlineAppSync.cacheResource({
+                url: pdfJSWorkerUrl,
+                priority: 1,
+                saveForUser: true,
+              });
+              console.log("PDF worker cached successfully");
+            } catch (cacheError) {
+              console.log("Failed to cache PDF worker:", cacheError);
+            }
+          }
+        } catch (error) {
+          console.error("Error setting up PDF.js worker:", error);
+          // Fallback to CDN version if anything fails
+          pdfjsLib.GlobalWorkerOptions.workerSrc = pdfJSWorkerUrl;
         }
       }
-      pdfjsLib.GlobalWorkerOptions.workerSrc = (cachedWorker && cachedWorker.url) ? cachedWorker.url : pdfJSWorkerUrl;
+      
+      // Setup worker before proceeding
+      await setupWorker();
 
       let pdfDoc = null;
       let pageNum = 1;
