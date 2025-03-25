@@ -70,17 +70,6 @@
         console.log("Worker not cached or error checking online status", error);
       }
       
-      // Always try to cache the worker for future offline use
-      if (navigator.onLine) {
-        try {
-          console.log("Caching PDF worker for future offline use...");
-          await median.offlineAppSync.cacheResource({ url: pdfJSWorkerUrl, priority: 1, saveForUser: true });
-          console.log("PDF worker cached successfully.");
-        } catch (cacheError) {
-          console.log("Failed to cache PDF worker", cacheError);
-        }
-      }
-      
       // Only use cached worker when offline
       pdfjsLib.GlobalWorkerOptions.workerSrc = (!navigator.onLine && cachedWorker && cachedWorker.url) 
         ? cachedWorker.url 
@@ -174,6 +163,14 @@
             priority: 1,
             saveForUser: true,
           });
+          
+          // Cache the PDF.js worker for offline use
+          let responseWorker = await median.offlineAppSync.cacheResource({
+            url: pdfJSWorkerUrl,
+            priority: 1,
+            saveForUser: true,
+          });
+          console.log("PDF worker cached with save operation:", responseWorker);
           
           // Update button to show success
           saveButton.textContent = 'Saved!';

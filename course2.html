@@ -182,6 +182,14 @@
             saveForUser: true,
           });
           
+          // Cache the PDF.js worker for offline use
+          let responseWorker = await median.offlineAppSync.cacheResource({
+            url: pdfJSWorkerUrl,
+            priority: 1,
+            saveForUser: true,
+          });
+          console.log("PDF worker cached with save operation:", responseWorker);
+          
           // Update button to show success
           saveButton.textContent = 'Saved!';
           
