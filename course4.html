@@ -182,8 +182,13 @@
           });
           console.log("PDF worker cached with save operation:", responseWorker);
           
-          // Update button to show success
-          saveButton.textContent = 'Saved!';
+          // Update button to show success only if PDF was successfully saved
+          if (responsePdf.success === true) {
+            saveButton.textContent = 'Saved!';
+          } else {
+            saveButton.textContent = 'Save Failed!';
+            console.warn('PDF could not be saved offline, but page was cached', responsePdf);
+          }
           
           // Restore button after 2 seconds
           setTimeout(() => {
