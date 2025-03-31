@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Offline Content - Education Portal</title>
+  <link rel="stylesheet" href="assets/css/styles.css">
+  <style>
+    .offline-list {
+      background-color: white;
+      border-radius: 8px;
+      padding: 1.5rem;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      margin-top: 1.5rem;
+    }
+
+    .offline-item {
+      padding: 1rem;
+      border-bottom: 1px solid #e5e7eb;
+      transition: background-color 0.2s ease;
+    }
+
+    .offline-item:last-child {
+      border-bottom: none;
+    }
+
+    .offline-item:hover {
+      background-color: #f3f4f6;
+    }
+
+    .offline-item a {
+      color: #007bff;
+      text-decoration: none;
+      font-weight: 500;
+      display: block;
+    }
+
+    .offline-item a:hover {
+      color: #0056b3;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 2rem;
+      color: #6b7280;
+    }
+
+    .refresh-button {
+      background-color: #007bff;
+      color: white;
+      padding: 0.5rem 1rem;
+      border-radius: 0.25rem;
+      border: none;
+      font-size: 0.875rem;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+      margin-top: 1rem;
+    }
+
+    .refresh-button:hover {
+      background-color: #0056b3;
+    }
+
+    .home-link {
+      display: inline-block;
+      margin-top: 1.5rem;
+      color: #007bff;
+      text-decoration: none;
+      font-weight: 500;
+      padding: 0.5rem 1rem;
+      border: 1px solid #007bff;
+      border-radius: 0.25rem;
+      transition: all 0.3s ease;
+    }
+
+    .home-link:hover {
+      background-color: #007bff;
+      color: white;
+    }
+    
+    .text-center {
+      text-align: center;
+      margin: 1rem 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header class="home-bar">
+      <h1>Education Portal - Offline Content</h1>
+    </header>
+
+    <main>
+      <div class="offline-list" id="offline-content">
+        <div class="empty-state">
+          <p>Loading offline content...</p>
+        </div>
+      </div>
+      <div class="text-center">
+        <button class="refresh-button" onclick="loadOfflineContent()">Refresh Content List</button>
+        <div style="margin-top: 1.5rem;">
+          <a href="index.html" class="home-link">← Back to Portal</a>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    // Function to load offline content
+    async function loadOfflineContent() {
+      const offlineContentElement = document.getElementById('offline-content');
+
+      try {
+        // Get saved pages from median
+        let response = await median.offlineAppSync.getSavedPages();
+        let pages = response.pages;
+
+        console.log(JSON.stringify(pages));
+
+        // Check if pages exist and have items
+        if (pages && pages.length > 0) {
+          // Clear previous content
+          offlineContentElement.innerHTML = '';
+
+          // Add each page to the list
+          pages.forEach(page => {
+            const item = document.createElement('div');
+            item.className = 'offline-item';
+
+            const link = document.createElement('a');
+            // Use the cached URL directly
+            link.href = page.url;
+            link.textContent = page.name || 'Unnamed Course';
+
+            item.appendChild(link);
+            offlineContentElement.appendChild(item);
+          });
+        } else {
+          // No offline content found
+          offlineContentElement.innerHTML = `
+            <div class="empty-state">
+              <p>No offline content available.</p>
+              <p>Visit course pages and click "Save Offline" to save course materials for offline viewing.</p>
+            </div>
+          `;
+        }
+      } catch (error) {
+        console.error('Error loading offline content:', error);
+        offlineContentElement.innerHTML = `
+          <div class="empty-state">
+            <p>Error loading offline content.</p>
+            <p>This feature might not be supported in your current environment.</p>
+          </div>
+        `;
+      }
+    }
+
+    // Load content when page loads
+    document.addEventListener('DOMContentLoaded', loadOfflineContent);
+  </script>
+</body>
+</html>

@@ -21,14 +21,38 @@
       border: 1px solid #ccc;
       z-index: 1000;
     }
+    
+    /* Navigation bar styles */
+    .nav-buttons {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    
+    .nav-button {
+      background-color: #007bff;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    
+    .nav-button:hover {
+      background-color: #0056b3;
+    }
   </style>
 </head>
 <body>
   <div class="container">
     <header class="home-bar">
       <h1>Welcome to the Education Portal</h1>
-      <!-- Added Settings Button -->
-      <button id="open-settings">Settings</button>
+      <!-- Navigation Buttons -->
+      <div class="nav-buttons">
+        <button id="open-settings" class="nav-button">Settings</button>
+        <button onclick="window.location.href='offline.html'" class="nav-button">Offline Content</button>
+      </div>
     </header>
     <div class="card-container">
       <!-- Card for Course 1 -->
